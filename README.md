@@ -1,3 +1,87 @@
+# VibeFinder 2.0 · Applied AI System
+
+VibeFinder builds a playlist from a listener's genre, mood, and energy preferences. It applies explicit artist exclusions and can return a shorter playlist or abstain when the song catalog offers too few strong matches. Every result reports the reasons behind its ranking and the number of tracks screened out.
+
+## Base project
+
+This extends AI110 Project 3, [Music Recommender Simulation](https://github.com/THEFLASH10002/ai110-module3show-musicrecommendersimulation-starter). The original program ranked songs in an 18-track catalog using weighted similarity to a listener profile and gave an explanation for each result. It offered multiple scoring modes and optional diversity penalties, and returned up to five results even when the scores were low.
+
+## Architecture and design
+
+The [Mermaid architecture source](diagrams/architecture.mmd) follows one request from the Python CLI to the existing scorer and then through the new playlist guardrail. The listener sees a complete playlist, a partial playlist, or an abstention. The evaluator checks several repeatable requests alongside the original ranker.
+
+Artist exclusions use exact names after trimming whitespace and ignoring case. The minimum similarity of `0.65` acts on the base score before the optional diversity reranker, so diversity can reorder eligible tracks but cannot reintroduce screened-out tracks. The cutoff is a classroom heuristic. Tightening it would reduce catalog coverage, while lowering it would allow weaker matches into the playlist.
+
+## Setup and execution
+
+1. Install Python 3.10 or newer and open a terminal at the repository root.
+2. Run a sample command below. The application and evaluation script use the Python standard library and require zero credentials.
+3. Run `python -m src.evaluate_playlist` to reproduce the six reliability checks. For the full suite, install `pytest` with `python -m pip install pytest` and run `python -m pytest -q`.
+
+## Reproducible demo
+
+### Lo-fi, diversity enabled
+
+```console
+$ python -m src.playlist --genre lofi --mood chill --energy .4 --limit 2 --diversity
+Status: complete (2/2 tracks)
+Screened out: 0 excluded artist track(s), 15 track(s) below 0.65 similarity
+1. Midnight Coding — LoRoom (0.996)
+   genre match (+0.444); mood match (+0.333); energy distance 0.020 (+0.218); acousticness omitted; active weights normalized by 0.90; base score 0.996; repeated artist penalty (-0.000); repeated genre penalty (-0.000); adjusted score 0.996
+2. Library Rain — Paper Lanterns (0.929)
+   genre match (+0.444); mood match (+0.333); energy distance 0.050 (+0.211); acousticness omitted; active weights normalized by 0.90; base score 0.989; repeated artist penalty (-0.000); repeated genre penalty (-0.060); adjusted score 0.929
+```
+
+### Pop, catalog supports only one strong match
+
+```console
+$ python -m src.playlist --genre pop --mood happy --energy .8
+Status: partial (1/3 tracks)
+Screened out: 0 excluded artist track(s), 17 track(s) below 0.65 similarity
+1. Sunrise City — Neon Echo (0.996)
+   genre match (+0.444); mood match (+0.333); energy distance 0.020 (+0.218); acousticness omitted; active weights normalized by 0.90
+```
+
+### Unsupported genre and mood
+
+```console
+$ python -m src.playlist --genre opera --mood spooky --energy .8
+Status: abstain (0/3 tracks)
+Screened out: 0 excluded artist track(s), 18 track(s) below 0.65 similarity
+No tracks meet the request. Try a different genre, mood, or energy target.
+```
+
+### Reliability evaluation
+
+```console
+$ python -m src.evaluate_playlist
+PASS  Lo-fi produces two different artists with diversity enabled
+PASS  Pop returns one strong track and does not fill two remaining slots
+PASS  Case-insensitive artist exclusion removes the only eligible pop track
+PASS  An empty catalog returns an empty playlist
+PASS  Unsupported request abstains when the original ranks three weak tracks
+PASS  Non-finite energy is rejected
+
+6/6 checks passed
+```
+
+### Full regression suite
+
+```console
+$ python -m pytest -q
+........................................................................ [ 86%]
+...........                                                              [100%]
+83 passed in 0.38s
+```
+
+## Results and presentation
+
+All six checks passed. For the unsupported request, the baseline ranked three tracks below the similarity cutoff and the guarded pipeline returned zero. For lo-fi, the guardrail preserved enough high-scoring candidates for the requested playlist. See the [execution log](assets/playlist-demo.txt) and [model card](model_card.md) for details.
+
+For a five- to seven-minute walkthrough, introduce the original ranking problem, trace the architecture, run one complete playlist and one abstention, then compare the evaluator results and discuss the catalog limitations. This project demonstrates how a system can expose uncertainty through an observable change in behavior.
+
+---
+
 # Music Recommender Simulation
 
 VibeFinder 1.0 is a working CLI-first, content-based music recommender. It loads 18 songs with 15 attributes, scores them against explicit preferences, and returns five ranked songs with reasons. It includes three scoring modes, five optional advanced features, and an artist/genre diversity penalty.

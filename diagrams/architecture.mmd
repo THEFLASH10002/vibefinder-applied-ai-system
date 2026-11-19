@@ -1,0 +1,11 @@
+flowchart TD
+    Request[Listener preferences and exclusions] --> Validate[Validate request]
+    Validate -->|Valid| Rank[Filter artists and rank tracks]
+    Validate -->|Invalid| Error[CLI error and exit]
+    Catalog[(Song catalog CSV)] --> Rank
+    Rank --> Gate[Keep tracks with similarity at least 0.65]
+    Gate --> Select[Select tracks with optional diversity reranking]
+    Select --> Output[Playlist or abstention with reasons and counts]
+    Cases[Automated evaluation cases] -.-> Validate
+    Cases -.-> Output
+    Output --> Review[Listener reviews results and can revise preferences]

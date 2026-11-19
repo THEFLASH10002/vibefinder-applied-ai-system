@@ -1,3 +1,25 @@
+# Model Card · VibeFinder 2.0
+
+## Intended use and method
+
+VibeFinder is a classroom demonstration of a content-based music recommender. It uses the 18-track catalog and weighted genre, mood, and energy similarity from the Module 3 project. It filters out requested artists, scores the remaining candidates, skips tracks below `0.65`, and optionally uses the existing diversity penalties to order the final picks. The displayed scores are similarity measures. They do not estimate the probability of listener satisfaction.
+
+## Limitations, biases, and misuse
+
+The small catalog covers some genre and mood combinations more densely than others. Exact artist-name matching can miss aliases, and coarse mood labels can leave relevant tracks out. A playlist score could be misread as a judgment of a listener or an artist. The tool takes explicit session preferences, returns scoring reasons, and avoids inferring listener traits. A production version would need a larger catalog, an artist-alias index, and feedback from listeners across different catalog slices before selecting or tuning a threshold.
+
+## Reliability observations
+
+The six evaluation cases covered complete, partial, and empty playlists, artist exclusions, invalid energy, and an out-of-catalog request. The original ranking returned three low-scoring tracks for the opera/spooky example, even though the catalog offered no strong match. The guarded system abstained. Excluding Neon Echo from the happy pop example removed the one eligible result. That outcome illustrates how a hard preference can expose sparse catalog coverage. Full test and demo output is in [the execution log](assets/playlist-demo.txt).
+
+## AI collaboration
+
+ChatGPT (Codex) helped implement the artist-exclusion filter and similarity cutoff in `src/playlist.py`. It also helped write `src/evaluate_playlist.py` and `tests/test_playlist.py` to check weak matches, exclusions, and invalid inputs.
+
+The implementation reused the existing ranking function. One idea we considered was filling empty slots with lower-ranked songs. The final version returns a shorter playlist or no tracks because filling those slots could add songs below the cutoff. The evaluation reproduced this difference for a request the catalog did not cover.
+
+---
+
 # Model Card: VibeFinder 1.0
 
 ## 1. Model Name
